@@ -1,0 +1,34 @@
+2026-10-04 00:58:37.195 | INFO     | __main__:main:33 - АПК №1: C:\Users\Stanger\Documents\dayr\input\Day R Premium№1.421 — копия (2).apk
+2026-10-04 00:58:37.621 | INFO     | androguard.core.apk:_apk_analysis:420 - Starting analysis on AndroidManifest.xml
+2026-10-04 00:58:37.648 | INFO     | androguard.core.apk:_apk_analysis:506 - APK file was successfully validated!
+2026-10-04 00:58:42.266 | INFO     | __main__:main:44 - 1. --- Новый APK ---
+2026-10-04 00:58:42.276 | INFO     | __main__:main:33 - АПК №2: C:\Users\Stanger\Documents\dayr\input\Day R Premium№1.421 — копия.apk
+2026-10-04 00:58:42.605 | INFO     | __main__:main:40 - 2. --- Старый APK ---
+2026-10-04 00:58:42.956 | INFO     | __main__:main:33 - АПК №3: C:\Users\Stanger\Documents\dayr\input\Day R Premium№1.421.apk
+2026-10-04 00:58:43.288 | INFO     | __main__:main:40 - 3. --- Старый APK ---
+2026-10-04 00:58:43.649 | INFO     | __main__:main:33 - АПК №4: C:\Users\Stanger\Documents\dayr\input\Day R Survival 1.370.apk
+2026-10-04 00:58:43.956 | INFO     | androguard.core.apk:_apk_analysis:420 - Starting analysis on AndroidManifest.xml
+2026-10-04 00:58:43.962 | INFO     | androguard.core.apk:_apk_analysis:506 - APK file was successfully validated!
+2026-10-04 00:58:48.235 | INFO     | __main__:main:44 - 4. --- Новый APK ---
+2026-10-04 00:58:48.253 | INFO     | __main__:main:33 - АПК №5: C:\Users\Stanger\Documents\dayr\input\Day R Survival#1.370.apk
+2026-10-04 00:58:48.494 | INFO     | __main__:main:40 - 5. --- Старый APK ---
+2026-10-04 00:58:48.758 | INFO     | __main__:main:33 - АПК №6: C:\Users\Stanger\Documents\dayr\input\Day R Survival№1.370.apk
+2026-10-04 00:58:48.994 | INFO     | __main__:main:40 - 6. --- Старый APK ---
+2026-10-04 00:58:49.261 | INFO     | __main__:main:60 - Обработано APK: 6, ошибок: 0
+2026-10-04 01:00:35.012 | INFO     | __main__:main:33 - АПК №1: C:\Users\Stanger\Documents\dayr\input\Day R Premium№1.421 — копия (2).apk
+2026-10-04 01:00:35.420 | INFO     | androguard.core.apk:_apk_analysis:420 - Starting analysis on AndroidManifest.xml
+2026-10-04 01:00:35.446 | INFO     | androguard.core.apk:_apk_analysis:506 - APK file was successfully validated!
+2026-10-04 01:00:39.969 | INFO     | __main__:main:44 - 1. --- Новый APK ---
+2026-10-04 01:00:39.990 | INFO     | __main__:main:33 - АПК №2: C:\Users\Stanger\Documents\dayr\input\Day R Premium№1.421 — копия.apk
+2026-10-04 01:00:40.370 | INFO     | __main__:main:40 - 2. --- Старый APK ---
+2026-10-04 01:00:40.718 | INFO     | __main__:main:33 - АПК №3: C:\Users\Stanger\Documents\dayr\input\Day R Premium№1.421.apk
+2026-10-04 01:00:41.068 | INFO     | __main__:main:40 - 3. --- Старый APK ---
+2026-10-04 01:00:41.424 | INFO     | __main__:main:33 - АПК №4: C:\Users\Stanger\Documents\dayr\input\Day R Survival 1.370.apk
+2026-10-04 01:00:41.743 | INFO     | androguard.core.apk:_apk_analysis:420 - Starting analysis on AndroidManifest.xml
+2026-10-04 01:00:41.749 | INFO     | androguard.core.apk:_apk_analysis:506 - APK file was successfully validated!
+2026-10-04 01:00:45.978 | INFO     | __main__:main:44 - 4. --- Новый APK ---
+2026-10-04 01:00:45.995 | INFO     | __main__:main:33 - АПК №5: C:\Users\Stanger\Documents\dayr\input\Day R Survival#1.370.apk
+2026-10-04 01:00:46.253 | INFO     | __main__:main:40 - 5. --- Старый APK ---
+2026-10-04 01:00:46.514 | INFO     | __main__:main:33 - АПК №6: C:\Users\Stanger\Documents\dayr\input\Day R Survival№1.370.apk
+2026-10-04 01:00:46.769 | INFO     | __main__:main:40 - 6. --- Старый APK ---
+2026-10-04 01:00:47.038 | INFO     | __main__:main:61 - Обработано APK: 6, ошибок: 0

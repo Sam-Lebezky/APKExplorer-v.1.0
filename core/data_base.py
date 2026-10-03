@@ -1,13 +1,13 @@
 import json
 import sqlite3 as sql
-from dataclasses import asdict
 from typing import Optional
 
-from core import settings
+from loguru import logger
+
 from core.models import ApkInfo
 
 
-#Порядок в SQL и в кортеже должен совпадать тк используется для SELECT.
+# Порядок в SQL и в кортеже должен совпадать т.к. используется для SELECT.
 _COLUMNS = (
     "apk_files_sha256",
     "apk_cert_sha256",
@@ -26,14 +26,31 @@ _COLUMNS = (
     "is_orig_cert",
 )
 _COLUMNS_SQL = ", ".join(_COLUMNS)
+_COLUMNS_SET = frozenset(_COLUMNS)
 
 
-def _row_to_apk_info(row) -> ApkInfo:#Распаковывает строку из БД в объект ApkInfo
-    apk_arches = json.loads(row["apk_arches"]) if row["apk_arches"] else []
-    apk_file_names = json.loads(row["apk_file_names"]) if row["apk_file_names"] else []
+def _row_to_apk_info(row) -> ApkInfo:
+    """Распаковывает строку из БД в объект ApkInfo."""
+    try:
+        apk_arches = json.loads(row["apk_arches"]) if row["apk_arches"] else []
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(f"Битый JSON в apk_arches для {row['apk_files_sha256']}")
+        apk_arches = []
+
+    try:
+        apk_file_names = json.loads(row["apk_file_names"]) if row["apk_file_names"] else []
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(f"Битый JSON в apk_file_names для {row['apk_files_sha256']}")
+        apk_file_names = []
 
     raw_orig = row["is_orig_cert"]
-    is_orig_cert = None if raw_orig is None else bool(raw_orig)
+    if raw_orig is None:
+        is_orig_cert = None
+    else:
+        try:
+            is_orig_cert = bool(int(raw_orig))
+        except (ValueError, TypeError):
+            is_orig_cert = bool(raw_orig)
 
     return ApkInfo(
         apk_files_sha256=row["apk_files_sha256"],
@@ -54,7 +71,8 @@ def _row_to_apk_info(row) -> ApkInfo:#Распаковывает строку и
     )
 
 
-def init_db(conn):#Создание таблиц, триггеров, индексов
+def init_db(conn):
+    """Создание таблиц, триггеров, индексов."""
 
     conn.execute("PRAGMA foreign_keys = ON")
 
@@ -83,9 +101,9 @@ def init_db(conn):#Создание таблиц, триггеров, индек
         id                INTEGER PRIMARY KEY AUTOINCREMENT,
         apk_files_sha256  TEXT NOT NULL,
         apk_file_name     TEXT NOT NULL,
-        apk_file_path     TEXT,
+        apk_file_path     TEXT NOT NULL,
         discovered_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(apk_files_sha256, apk_file_name),
+        UNIQUE(apk_files_sha256, apk_file_path),
         FOREIGN KEY (apk_files_sha256) REFERENCES apk_files(apk_files_sha256)
             ON DELETE CASCADE
     )
@@ -96,9 +114,12 @@ def init_db(conn):#Создание таблиц, триггеров, индек
         ON apk_files_duplicates(apk_files_sha256)
     """)
 
-    # Триггеры остаются как страховка от прямых INSERT/DELETE в таблицу дублей.
+    # Пересоздаём триггеры, чтобы при изменении логики не остались старые версии.
+    conn.execute("DROP TRIGGER IF EXISTS trg_duplicates_ai")
+    conn.execute("DROP TRIGGER IF EXISTS trg_duplicates_ad")
+
     conn.execute("""
-    CREATE TRIGGER IF NOT EXISTS trg_duplicates_ai
+    CREATE TRIGGER trg_duplicates_ai
     AFTER INSERT ON apk_files_duplicates
     BEGIN
         UPDATE apk_files
@@ -115,7 +136,7 @@ def init_db(conn):#Создание таблиц, триггеров, индек
     """)
 
     conn.execute("""
-    CREATE TRIGGER IF NOT EXISTS trg_duplicates_ad
+    CREATE TRIGGER trg_duplicates_ad
     AFTER DELETE ON apk_files_duplicates
     BEGIN
         UPDATE apk_files
@@ -135,8 +156,8 @@ def init_db(conn):#Создание таблиц, триггеров, индек
     """)
 
 
-def get_apk(sha256: str, conn) -> Optional[ApkInfo]:#Возвращает ApkInfo по sha256 или None
-    
+def get_apk(sha256: str, conn) -> Optional[ApkInfo]:
+    """Возвращает ApkInfo по sha256 или None."""
     cursor = conn.cursor()
     cursor.execute(
         f"SELECT {_COLUMNS_SQL} FROM apk_files WHERE apk_files_sha256 = ?",
@@ -147,7 +168,11 @@ def get_apk(sha256: str, conn) -> Optional[ApkInfo]:#Возвращает ApkInf
 
 
 def read_db(conn, limit: Optional[int] = None, **kwargs) -> list[ApkInfo]:
-    #Считывает записи об APK по заданным параметрам.
+    """Считывает записи об APK по заданным параметрам."""
+
+    invalid = set(kwargs) - _COLUMNS_SET
+    if invalid:
+        raise ValueError(f"Неизвестные колонки для фильтра: {sorted(invalid)}")
 
     cursor = conn.cursor()
     query = f"SELECT {_COLUMNS_SQL} FROM apk_files"
@@ -166,9 +191,8 @@ def read_db(conn, limit: Optional[int] = None, **kwargs) -> list[ApkInfo]:
     return [_row_to_apk_info(row) for row in cursor.fetchall()]
 
 
-def write_db(info: ApkInfo, conn):#Записывает основную информацию об APK
-    
-    
+def write_db(info: ApkInfo, conn):
+    """Записывает основную информацию об APK."""
 
     data = {
         "apk_files_sha256": info.apk_files_sha256,
@@ -214,31 +238,28 @@ def write_db(info: ApkInfo, conn):#Записывает основную инф�
     """, data)
 
 
-def add_db(sha256: str, conn, apk_file_name: str, apk_file_path: Optional[str] = None):
-    
-    #Регистрирует имя файла как дубль.
-
+def add_db(sha256: str, conn, apk_file_name: str, apk_file_path: str) -> list[str]:
+    """
+    Регистрирует файл как дубль. Возвращает актуальный список имён файлов
+    для данного APK (обновляется триггером trg_duplicates_ai).
+    """
     cursor = conn.cursor()
-
     cursor.execute("""
         INSERT OR IGNORE INTO apk_files_duplicates
             (apk_files_sha256, apk_file_name, apk_file_path)
         VALUES (?, ?, ?)
     """, (sha256, apk_file_name, apk_file_path))
 
-
     cursor.execute("""
-        UPDATE apk_files
-        SET apk_file_names = (
-            SELECT json_group_array(apk_file_name)
-            FROM (
-                SELECT apk_file_name FROM apk_files_duplicates
-                WHERE apk_files_sha256 = ?
-                ORDER BY id
-            )
-        )
-        WHERE apk_files_sha256 = ?
-    """, (sha256, sha256))
+        SELECT apk_file_names FROM apk_files WHERE apk_files_sha256 = ?
+    """, (sha256,))
+    row = cursor.fetchone()
+    if row is None or not row["apk_file_names"]:
+        return []
+    try:
+        return json.loads(row["apk_file_names"])
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 def get_duplicates(sha256: str, conn) -> list[dict]:
